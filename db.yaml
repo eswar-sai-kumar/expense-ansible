@@ -2,7 +2,7 @@
   hosts: db
   become: yes
   vars:
-    login_host: eswarsaikumar.site
+    login_host: db.eswarsaikumar.site
   vars_prompt:
   - name: mysql_root_password
     prompt: please enter mysql root password
