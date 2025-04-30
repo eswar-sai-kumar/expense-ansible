@@ -15,7 +15,7 @@
 
   - name: start mysql
     ansible.builtin.service:
-      name: mysql
+      name: mysqld
       state: started
       enabled: yes
 
@@ -35,7 +35,7 @@
       filter: version # it only fetches version from the mysql information, if version came that means password already set 
     ignore_errors: yes # errors will come if password not set yet, so we ignore errors and set up password
     register: mysql_connection_output # saves mysql info here
-      
+
   - name: print output
     ansible.builtin.debug:
       msg: "output: {{mysql_connection_output}}" 
