@@ -5,81 +5,75 @@
     login_host: db.eswarsaikumar.site
     login_password: ExpenseApp@1
   tasks:
-    - name: disable default nodejs
-      ansible.builtin.command: dnf module disable nodejs -y
+  - name: disable default nodejs
+    ansible.builtin.command: dnf module disable nodejs -y
 
-    - name: enable nodejs:20
-      ansible.builtin.command: dnf module enable nodejs:20 -y
+  - name: enable nodejs:20
+    ansible.builtin.command: dnf module enable nodejs:20 -y
 
-    - name: install nodejs and mysql
-      ansible.builtin.dnf:
-        name: "{{ item }}"
-        state: installed
-      loop:
-        - nodejs
-        - mysql
+  - name: install nodejs
+    ansible.builtin.dnf: # only works for Redhat family
+      name: "{{ item }}"
+      state: installed
+    loop:
+    - nodejs
+    - mysql
 
-    - name: create expense user
-      ansible.builtin.user:
-        name: expense
+  - name: create expense user
+    ansible.builtin.user:
+      name: expense
 
-    - name: create app directory
-      ansible.builtin.file:
-        path: /app
-        state: directory
+  - name: create app directory
+    ansible.builtin.file:
+      path: /app
+      state: directory
 
-    - name: download backend code
-      ansible.builtin.get_url:
-        url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
-        dest: /tmp/backend.zip
+  - name: download backend code
+    ansible.builtin.get_url:
+      url: https://expense-builds.s3.us-east-1.amazonaws.com/expense-backend-v2.zip
+      dest: /tmp/backend.zip
 
-    - name: unzip backend code
-      ansible.builtin.unarchive:
-        src: /tmp/backend.zip
-        dest: /app
-        remote_src: yes
+  - name: unzip backend code
+    ansible.builtin.unarchive:
+      src: /tmp/backend.zip # by default checks in ansible server
+      dest: /app
+      remote_src: yes
 
-    - name: install npm dependencies
-      ansible.builtin.command: npm install
-      args:
-        chdir: /app
+  - name: install npm dependencies
+    ansible.builtin.command: npm install
+    args:
+      chdir: /app
 
-    - name: copy backend service
-      ansible.builtin.copy:
-        src: backend.service
-        dest: /etc/systemd/system/backend.service
+  - name: copy backend service
+    ansible.builtin.copy:
+      src: backend.service
+      dest: /etc/systemd/system/backend.service
 
-    - name: install python mysql dependencies
-      ansible.builtin.pip: 
-        name:
-          - PyMySQL
-          - cryptography
-        executable: pip3.9
+  - name: install python mysql dependencies
+    ansible.builtin.pip: 
+      name:
+      - PyMySQL # to connect MySQL DB from Ansible
+      - cryptography
+      executable: pip3.9 # pip3.11 if python version is 3.11
 
-    - name: import data into mysql
-      community.mysql.mysql_db:
-        login_user: root
-        login_password: "{{ login_password }}"
-        login_host: "{{ login_host }}"
-        target: /app/schema/backend.sql
-        state: import
-        name: all
-    - name: unmask backend service
-      ansible.builtin.systemd: # Added task to unmask the service before enabling it
-        name: backend.service
-        masked: no
-      ignore_errors: yes
+  - name: import data into mysql
+    community.mysql.mysql_db:
+      login_user: root
+      login_password: "{{ login_password }}"
+      login_host: "{{ login_host }}"
+      target: /app/schema/backend.sql
+      state: import
+      name: all
 
-    - name: daemon reload
-      ansible.builtin.systemd_service:
-        daemon_reload: true
+  - name: daemon reload
+    ansible.builtin.systemd_service:
+      daemon_reload: true
 
-    - name: enable backend service
-      ansible.builtin.systemd:
-        name: backend
-        enabled: yes
+  - name: start and enable backend service
+    ansible.builtin.service:
+      name: backend
+      state: started
+      enabled: yes
 
-    - name: start backend service
-      ansible.builtin.systemd:
-        name: backend
-        state: started
+      
+  
