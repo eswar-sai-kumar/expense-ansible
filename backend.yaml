@@ -69,9 +69,6 @@
       ansible.builtin.systemd_service:
         daemon_reload: true
 
-    - name: unmask backend service
-      ansible.builtin.command: systemctl unmask backend.service
-
     - name: enable backend service
       ansible.builtin.systemd:
         name: backend
